@@ -1,0 +1,23 @@
+{
+  "name": "st-finbarr-cms",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/run.mjs dev",
+    "build": "next build",
+    "start": "node scripts/run.mjs start",
+    "setup": "node scripts/run.mjs setup",
+    "db:reset": "node scripts/run.mjs reset"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "embedded-postgres": "17.10.0-beta.17",
+    "next": "14.2.35",
+    "pg": "^8.13.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "engines": {
+    "node": ">=18.18"
+  }
+}

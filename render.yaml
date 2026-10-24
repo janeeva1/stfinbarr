@@ -1,0 +1,16 @@
+# Render Blueprint: one web service. The database is Neon (set DATABASE_URL in Render).
+services:
+  - type: web
+    name: st-finbarr-parish
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
