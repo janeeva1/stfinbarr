@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { RESOURCES, labelFor } from '@/lib/resources';
+import { RESOURCES, labelFor, canAccess } from '@/lib/resources';
+import { getUser } from '@/lib/auth';
 import { listRows, relationOptions } from '@/lib/crud';
 import { getSettings } from '@/lib/settings';
 import { fmtDate, fmtMoney, fmtTime } from '@/lib/format';
@@ -10,6 +11,8 @@ import BulkUpload from '@/components/admin/BulkUpload';
 export default async function List({ params, searchParams }) {
   const res = RESOURCES[params.resource];
   if (!res) notFound();
+  const user = await getUser();
+  if (!canAccess(user.role, params.resource)) return <div className="a-card"><h2>No access</h2><p className="muted">Your role ({user.role}) cannot open this section. Ask the parish administrator if you need access.</p></div>;
   const q = searchParams?.q || '';
   const page = Number(searchParams?.page || 1);
   const { rows, total, pages } = await listRows(params.resource, { q, page });
@@ -28,6 +31,7 @@ export default async function List({ params, searchParams }) {
       case 'money': return fmtMoney(v, s.currency);
       case 'relation': return opts[k]?.find((o) => o.value === v)?.label || v;
       case 'select': return <span className="pill">{v}</span>;
+      case 'text': if (k === 'status') return <span className={`pill ${v === 'Approved' ? 'yes' : v === 'Awaiting approval' ? 'warn' : ''}`}>{v}</span>; return String(v).slice(0, 70);
       default: return String(v).slice(0, 70);
     }
   };
@@ -38,9 +42,11 @@ export default async function List({ params, searchParams }) {
         <div><h1>{res.icon} {res.label}</h1><p className="muted" style={{ margin: 0 }}>{total} record{total === 1 ? '' : 's'}{totals !== null && ` · Total ${fmtMoney(totals, s.currency)}`}</p></div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {res.search && <form><input name="q" defaultValue={q} className="input" placeholder="Search…" style={{ padding: '9px 12px', width: 220 }} /></form>}
+          <a href={`/api/admin/export/${params.resource}`} className="btn btn-light btn-sm">⬇ Export CSV</a>
           {!res.noCreate && <Link href={`${base}/new`} className="btn btn-primary btn-sm">+ Add {res.singular}</Link>}
         </div>
       </div>
+      {res.note && <div className="alert info" style={{ marginBottom: 16 }}>ℹ️ {res.note}</div>}
       {res.bulkUpload && <BulkUpload albums={opts.album_id || []} initial={searchParams?.album} />}
       <div className="t-wrap">
         <table className="t">

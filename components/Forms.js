@@ -1,5 +1,15 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
+
+function Consent() {
+  return (
+    <label className="consent">
+      <input type="checkbox" name="consent" value="yes" required />
+      <span>I agree that the parish may use these details to respond to my request, as described in the <Link href="/privacy" target="_blank">Privacy Notice</Link>.</span>
+    </label>
+  );
+}
 
 function useSubmit(url) {
   const [state, setState] = useState({ busy: false, ok: '', err: '' });
@@ -34,6 +44,7 @@ export function ContactForm({ defaultType = 'Contact' }) {
         <label className="f">Subject<input name="subject" className="input" /></label>
       </div>
       <label className="f">Message / Prayer intention<textarea name="message" rows={5} className="input" required /></label>
+      <Consent />
       {st.ok && <div className="alert ok">{st.ok}</div>}{st.err && <div className="alert err">{st.err}</div>}
       <button className="btn btn-primary" disabled={st.busy}>{st.busy ? 'Sending…' : 'Send Message'}</button>
     </form>
@@ -57,8 +68,30 @@ export function IntentionForm() {
         <label className="f">Preferred date<input type="date" name="mass_date" className="input" /></label>
       </div>
       <label className="f">Intention *<textarea name="intention" rows={3} className="input" required placeholder="e.g. For the repose of the soul of…" /></label>
+      <Consent />
       {st.ok && <div className="alert ok">{st.ok}</div>}{st.err && <div className="alert err">{st.err}</div>}
       <button className="btn btn-accent" disabled={st.busy}>{st.busy ? 'Sending…' : 'Book Mass Intention'}</button>
+    </form>
+  );
+}
+
+export function SacramentForm({ options, initial }) {
+  const [st, submit] = useSubmit('/api/public/message');
+  return (
+    <form className="form" onSubmit={(e) => submit(e, 'Thank you! The parish office has received your registration and will contact you.')}>
+      <input type="hidden" name="type" value="Sacrament Registration" />
+      <label className="f">Sacrament *
+        <select name="subject" className="input" defaultValue={options.includes(initial) ? initial : options[0]} required>{options.map((o) => <option key={o}>{o}</option>)}</select>
+      </label>
+      <div className="row2">
+        <label className="f">Your name *<input name="name" className="input" required /></label>
+        <label className="f">Phone *<input name="phone" className="input" required /></label>
+      </div>
+      <label className="f">Email<input name="email" type="email" className="input" /></label>
+      <label className="f">Details *<textarea name="message" rows={4} className="input" required placeholder="Name of the candidate(s), age / date of birth, preferred date, and any questions" /></label>
+      <Consent />
+      {st.ok && <div className="alert ok">{st.ok}</div>}{st.err && <div className="alert err">{st.err}</div>}
+      <button className="btn btn-primary" disabled={st.busy}>{st.busy ? 'Sending…' : 'Send Registration'}</button>
     </form>
   );
 }

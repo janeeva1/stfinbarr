@@ -24,13 +24,25 @@ export default async function About() {
           <div className="photo"><Img src={s.about_image || "/images/gallery-choir.jpg"} alt="" /></div>
         </div>
       </section>
-      <section className="section soft">
+      <section className="section">
         <div className="narrow center">
           <span className="eyebrow">Our Story</span><h2>Parish History</h2><div className="ornament" />
           <p className="prose" style={{ marginTop: 32, textAlign: 'left' }}>{s.history_text}</p>
         </div>
       </section>
       <section className="section">
+        <div className="container welcome" id="patron">
+          <div className="photo"><Img src={s.patron_image || s.about_image || '/images/gallery-service.jpg'} alt="St. Finbarr" seed={3} /></div>
+          <div>
+            <span className="eyebrow">Our patron saint</span>
+            <h2>{s.patron_title}</h2>
+            {s.patron_feast && <p className="tag" style={{ display: 'inline-block' }}>Feast day: {s.patron_feast}</p>}
+            <p className="prose">{s.patron_text}</p>
+            <p className="quote" style={{ fontSize: '1.2rem' }}>St. Finbarr, pray for us.</p>
+          </div>
+        </div>
+      </section>
+      <section className="section soft">
         <div className="container">
           <div className="section-head center"><span className="eyebrow">Shepherds of the flock</span><h2>Our Clergy & Pastoral Team</h2><div className="ornament" /></div>
           <div className="grid g3">

@@ -91,6 +91,23 @@ CREATE TABLE IF NOT EXISTS uploads (
 CREATE TABLE IF NOT EXISTS messages (
   id SERIAL PRIMARY KEY, type TEXT DEFAULT 'Contact', name TEXT, email TEXT, phone TEXT, subject TEXT,
   message TEXT, status TEXT DEFAULT 'New', created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS livestreams (
+  id SERIAL PRIMARY KEY, title TEXT NOT NULL, kind TEXT DEFAULT 'Recorded Mass', url TEXT, scheduled_at TIMESTAMPTZ,
+  preacher TEXT, description TEXT, published BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS celebrations (
+  id SERIAL PRIMARY KEY, title TEXT NOT NULL, date DATE, end_date DATE, kind TEXT DEFAULT 'Feast', mass_times TEXT,
+  description TEXT, image TEXT, published BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS sacrament_info (
+  id SERIAL PRIMARY KEY, name TEXT NOT NULL, summary TEXT, requirements TEXT, preparation TEXT, how_to_register TEXT,
+  image TEXT, registration_open BOOLEAN DEFAULT true, sort_order INT DEFAULT 0, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS readings (
+  id SERIAL PRIMARY KEY, date DATE UNIQUE NOT NULL, liturgical_day TEXT,
+  first_ref TEXT, first_text TEXT, psalm_ref TEXT, psalm_text TEXT, second_ref TEXT, second_text TEXT,
+  gospel_ref TEXT, gospel_text TEXT, notes TEXT, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS readings_cache (date TEXT PRIMARY KEY, data JSONB NOT NULL, fetched_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS page_views (day DATE NOT NULL, path TEXT NOT NULL, views INT DEFAULT 0, PRIMARY KEY (day, path));
+ALTER TABLE news ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS status TEXT;
 `;
 
 const img = (n) => `/images/gallery-${n}.jpg`;
@@ -122,14 +139,104 @@ const DEFAULT_SETTINGS = {
   banner_about: img('community'), banner_mass: img('service'), banner_events: img('community'),
   banner_news: img('choir'), banner_gallery: img('choir'), banner_ministries: img('prayer'),
   banner_contact: img('community'), banner_donate: img('prayer'),
-  theme_preset: 'marian',
-  primary_color: '#1d3a8a',
-  accent_color: '#c9a227',
-  dark_color: '#0f1b3d',
-  bg_color: '#faf8f3',
+  theme_preset: 'burgundy',
+  primary_color: '#6d1a36',
+  accent_color: '#c99a3b',
+  dark_color: '#2e0b17',
+  bg_color: '#fbf6f0',
   heading_font: 'Cormorant Garamond',
   currency: '₦',
+  motto: 'Faith · Hope · Charity',
+  patron_title: 'Our Patron: St. Finbarr of Cork',
+  patron_feast: '25 September',
+  patron_image: '',
+  patron_text: 'St. Finbarr (Fionnbarr, c. 550 – c. 623) was an Irish monk and bishop. As a young man he lived as a hermit at Gougane Barra, a quiet lake in the hills of West Cork, before travelling down the River Lee, where he founded a monastery and a school of learning. That settlement grew into the city of Cork, and Finbarr is honoured as its first bishop and patron.\n\nHe is remembered for his holiness, his love of learning and his care for the people he served — a fitting patron for a parish that seeks to grow in faith, knowledge of the Gospel and service to its neighbours. His feast is celebrated on 25 September.',
+  live_now: 'false',
+  live_url: '',
+  live_title: 'Holy Mass — Live from St. Finbarr’s',
+  live_schedule_text: 'Sunday Mass is streamed live every week. Special celebrations such as Christmas, Holy Week and parish feasts are also streamed.',
+  live_offline_text: 'We are not live at the moment. Please check the schedule below for our next broadcast, or watch a recent Mass or homily.',
+  youtube_channel_id: '',
+  readings_mode: 'auto',
+  sacraments_intro: 'The sacraments are encounters with Christ at every stage of life. Below you will find what is needed to prepare for each sacrament and how to register with the parish office.',
+  privacy_text: `St. Finbarr’s Catholic Church (“the Parish”) respects your privacy and handles personal information in line with the Nigeria Data Protection Act 2023.
+
+What we collect
+• Information you give us through this website: your name, phone number, email address and the content of messages, prayer requests, Mass intentions and sacrament registration requests.
+• Parish records kept by the parish office, such as registration and sacramental records.
+• Basic, anonymous statistics about which pages are visited. We do not use advertising or tracking cookies.
+
+Why we use it
+• To respond to your enquiries, prayer requests and Mass intentions.
+• To prepare for and record the sacraments, and to keep the parish register as required by Church law.
+• To communicate parish information you have asked for.
+
+Who can see it
+Only the Parish Priest and authorised parish staff. We do not sell your information or share it with third parties, except where required by law or by the Archdiocese for sacramental records.
+
+Photographs
+Photographs of parish activities may be published on this website. Where a person can be clearly identified, the Parish seeks permission first, and parents’ or guardians’ consent for children. If you would like a photo of yourself removed, please contact the parish office and we will remove it promptly.
+
+How long we keep it
+Messages and requests are kept only as long as needed to deal with them. Sacramental records are kept permanently, as required by Church law.
+
+Your rights
+You may ask to see, correct or delete the personal information we hold about you (except permanent sacramental records), or withdraw your consent at any time, by contacting the parish office using the details on our Contact page.
+
+Security
+The website uses encrypted (HTTPS) connections, administrator access is restricted and password-protected, and data is backed up regularly.`,
 };
+
+// Content for the sections added later (livestream, celebrations, sacraments).
+// Runs once on every database, including ones created before these sections existed.
+async function seedV2(c) {
+  const done = await c.query("SELECT 1 FROM settings WHERE key='_seeded_v2'");
+  if (done.rows.length) return;
+  const now = new Date();
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const next = (m, d) => { const t = new Date(now.getFullYear(), m - 1, d, 12); if (t < now) t.setFullYear(t.getFullYear() + 1); return t; };
+  const christKing = (() => { for (let y = now.getFullYear(); ; y++) { for (let d = 20; d <= 26; d++) { const t = new Date(y, 10, d, 12); if (t.getDay() === 0 && t >= now) return t; } } })();
+  const sunday = new Date(now); sunday.setDate(now.getDate() + ((7 - now.getDay()) % 7 || 7)); sunday.setHours(8, 30, 0, 0);
+
+  if (!(await c.query('SELECT 1 FROM celebrations LIMIT 1')).rows.length) {
+    const rows = [
+      ['Solemnity of All Saints', iso(next(11, 1)), null, 'Solemnity', '6:30 AM · 6:00 PM', 'We honour all the saints in heaven, known and unknown, who now share the glory of God.'],
+      ['Commemoration of All the Faithful Departed (All Souls)', iso(next(11, 2)), null, 'Commemoration', '6:30 AM · 6:00 PM', 'Mass for the souls of the faithful departed. Names of loved ones may be submitted at the parish office.'],
+      ['Our Lord Jesus Christ, King of the Universe', iso(christKing), null, 'Solemnity', 'All Sunday Masses', 'The last Sunday of the liturgical year, followed by a procession of the Blessed Sacrament.'],
+      ['Novena to the Immaculate Conception', iso(next(11, 29)), iso(next(12, 7)), 'Novena', 'Daily after the 6:00 PM Mass', 'Nine days of prayer in preparation for the Solemnity of the Immaculate Conception.'],
+      ['Solemnity of the Immaculate Conception', iso(next(12, 8)), null, 'Solemnity', '6:30 AM · 6:00 PM', 'Mary, conceived without sin, the patroness of our Christian life.'],
+      ['The Nativity of the Lord (Christmas)', iso(next(12, 25)), null, 'Holy Day of Obligation', 'Vigil 9:00 PM (24th) · 7:00 AM · 9:00 AM · 11:00 AM', 'Come and adore the newborn King with your family.'],
+      ['Solemnity of Mary, the Holy Mother of God', iso(next(1, 1)), null, 'Holy Day of Obligation', 'Cross-over Mass 10:00 PM (31st) · 9:00 AM', 'We begin the new year under the protection of Mary, Mother of God.'],
+      ['Feast of St. Finbarr — Parish Patronal Feast', iso(next(9, 25)), null, 'Parish Feast', 'Solemn Mass 10:00 AM', 'Our parish family celebrates our patron, St. Finbarr of Cork, with a solemn Mass and fellowship.'],
+    ];
+    for (const r of rows) await c.query('INSERT INTO celebrations (title, date, end_date, kind, mass_times, description) VALUES ($1,$2,$3,$4,$5,$6)', r);
+  }
+  if (!(await c.query('SELECT 1 FROM sacrament_info LIMIT 1')).rows.length) {
+    const rows = [
+      ['Baptism', 'Through Baptism we are freed from sin, reborn as children of God and welcomed into the Church.', '• At least one parent should be a practising Catholic registered in the parish\n• Godparents must be confirmed Catholics, at least 16 years old\n• Child\u2019s birth certificate\n• Parents\u2019 marriage certificate (if married in church)', 'Parents and godparents attend a baptism preparation class, usually on the Saturday before the baptism.', 'Complete the registration form below or visit the parish office at least one month before the preferred date.', 1],
+      ['First Holy Communion', 'Children who have reached the age of reason receive Jesus in the Holy Eucharist for the first time.', '• Baptismal certificate\n• Child usually 7 years or older\n• Regular attendance at Sunday Mass', 'Catechism classes run for one year, every Saturday after the morning Mass. First Confession is made before First Holy Communion.', 'Register your child at the parish office at the start of the catechism year.', 2],
+      ['Confirmation', 'Confirmation completes baptismal grace, sealing us with the gift of the Holy Spirit.', '• Baptismal and First Holy Communion certificates\n• A confirmed Catholic sponsor\n• Completion of the confirmation programme', 'Candidates attend the confirmation programme and a retreat before the Archbishop\u2019s visit.', 'Register through the catechism office or the form below.', 3],
+      ['Holy Matrimony', 'In marriage a man and a woman form a lifelong covenant, a sign of Christ\u2019s love for the Church.', '• Baptismal certificates issued within the last 6 months\n• Confirmation certificates\n• Letters of freedom / banns from the parishes of both parties\n• Pre-Cana (marriage preparation) certificate', 'Couples must contact the parish at least 6 months before the wedding to begin marriage preparation classes.', 'Book an appointment with the parish priest through the parish office.', 4],
+      ['Reconciliation (Confession)', 'In the sacrament of Penance we receive God\u2019s mercy and forgiveness and are reconciled with the Church.', '', 'See the confession times on the Mass Times page, or ask for a priest at the parish office.', 'No registration needed — confessions are heard at the scheduled times or by appointment.', 5],
+      ['Anointing of the Sick', 'The Church commends the seriously ill and elderly to the Lord, that he may raise them up and save them.', '', 'Please call the parish office or the priest on duty whenever someone is seriously ill or about to have surgery.', 'Call the parish office — in an emergency, at any time.', 6],
+    ];
+    for (const r of rows) await c.query('INSERT INTO sacrament_info (name, summary, requirements, preparation, how_to_register, sort_order, registration_open) VALUES ($1,$2,$3,$4,$5,$6,$7)', [...r, r[0] !== 'Reconciliation (Confession)' && r[0] !== 'Anointing of the Sick']);
+  }
+  if (!(await c.query('SELECT 1 FROM livestreams LIMIT 1')).rows.length) {
+    const s2 = new Date(sunday); s2.setDate(s2.getDate() + 7);
+    await c.query('INSERT INTO livestreams (title, kind, scheduled_at, description) VALUES ($1,$2,$3,$4),($5,$6,$7,$8)', [
+      'Sunday Mass (Live)', 'Upcoming', sunday.toISOString(), 'Join us online for Sunday Mass.',
+      'Sunday Mass (Live)', 'Upcoming', s2.toISOString(), 'Join us online for Sunday Mass.',
+    ]);
+  }
+  await c.query("INSERT INTO mass_times (day, time, title, category, sort_order) SELECT 'Every Tuesday', '6:00 PM', 'Novena to Our Lady of Perpetual Help', 'Novena', 10 WHERE NOT EXISTS (SELECT 1 FROM mass_times WHERE category='Novena')");
+  // Proposal colour scheme: burgundy, gold and cream (only if the old default blue was never changed)
+  await c.query(`UPDATE settings SET value = CASE key WHEN 'theme_preset' THEN 'burgundy' WHEN 'primary_color' THEN '#6d1a36'
+    WHEN 'accent_color' THEN '#c99a3b' WHEN 'dark_color' THEN '#2e0b17' WHEN 'bg_color' THEN '#fbf6f0' END
+    WHERE key IN ('theme_preset','primary_color','accent_color','dark_color','bg_color')
+      AND (SELECT value FROM settings WHERE key='primary_color') = '#1d3a8a'`);
+  await c.query("INSERT INTO settings (key, value) VALUES ('_seeded_v2','1') ON CONFLICT DO NOTHING");
+}
 
 async function seed(c) {
   const ins = async (table, rows) => {
@@ -264,6 +371,7 @@ export async function runSetup(databaseUrl, { reset = false, builtIn = false } =
     await c.query("INSERT INTO settings (key, value) VALUES ('_seeded','1') ON CONFLICT DO NOTHING");
     console.log('✔ Sample parish content added');
   }
+  await seedV2(c);
   await c.end();
   console.log('✔ Database ready\n');
 }

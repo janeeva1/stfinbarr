@@ -4,10 +4,13 @@ import { getSettings } from '@/lib/settings';
 import { fmtDate, fmtTime, excerpt } from '@/lib/format';
 import HeroSlider from '@/components/HeroSlider';
 import Img from '@/components/Img';
+import { Suspense } from 'react';
+import HomeWord, { HomeWordFallback } from '@/components/HomeWord';
+import { videoInfo } from '@/lib/video';
 
 export default async function Home() {
   const s = await getSettings();
-  const [slides, mass, events, news, albums, photos, ministries] = await Promise.all([
+  const [slides, mass, events, news, albums, photos, ministries, nextLive, lastRec, feasts] = await Promise.all([
     query('SELECT * FROM slides WHERE active ORDER BY sort_order, id'),
     query("SELECT * FROM mass_times ORDER BY sort_order, id LIMIT 4"),
     query('SELECT * FROM events WHERE published AND start_date >= now() - interval \'1 day\' ORDER BY featured DESC, start_date LIMIT 3'),
@@ -15,7 +18,12 @@ export default async function Home() {
     query('SELECT a.*, (SELECT count(*)::int FROM gallery_photos p WHERE p.album_id=a.id) n FROM gallery_albums a WHERE published ORDER BY event_date DESC NULLS LAST LIMIT 1'),
     query('SELECT p.*, a.title album FROM gallery_photos p JOIN gallery_albums a ON a.id=p.album_id WHERE a.published ORDER BY p.id DESC LIMIT 5'),
     query('SELECT * FROM ministries ORDER BY id LIMIT 4'),
+    query("SELECT * FROM livestreams WHERE published AND kind='Upcoming' AND scheduled_at >= now() - interval '3 hours' ORDER BY scheduled_at LIMIT 1"),
+    query("SELECT * FROM livestreams WHERE published AND kind <> 'Upcoming' AND url IS NOT NULL ORDER BY scheduled_at DESC NULLS LAST, id DESC LIMIT 1"),
+    query('SELECT * FROM celebrations WHERE published AND COALESCE(end_date, date) >= CURRENT_DATE ORDER BY date LIMIT 2'),
   ]);
+  const isLive = s.live_now === 'true';
+  const rec = lastRec[0] && videoInfo(lastRec[0].url);
 
   return (
     <>
@@ -51,11 +59,47 @@ export default async function Home() {
       </section>
 
       <section className="section tight soft">
-        <div className="container tiles">
-          <Link href="/mass-times" className="tile"><div className="ic">⛪</div><h3>Mass & Sacraments</h3><p>Mass, confession and adoration times.</p></Link>
+        <div className="container tiles six">
+          <Link href="/mass-times" className="tile"><div className="ic">⛪</div><h3>Mass Times</h3><p>Mass, confession, adoration and holy days.</p></Link>
+          <Link href="/live" className="tile"><div className="ic">📺</div><h3>Livestream</h3><p>Watch Mass live and recorded homilies.</p></Link>
+          <Link href="/readings" className="tile"><div className="ic">📜</div><h3>Daily Readings</h3><p>Today’s and Sunday’s Mass readings.</p></Link>
+          <Link href="/sacraments" className="tile"><div className="ic">💧</div><h3>Sacraments</h3><p>Preparation and online registration.</p></Link>
           <Link href="/contact?type=Prayer+Request" className="tile"><div className="ic">🙏</div><h3>Prayer Request</h3><p>Let us pray with you and for you.</p></Link>
           <Link href="/mass-times#intention" className="tile"><div className="ic">🕯️</div><h3>Book a Mass</h3><p>Request a Mass intention for loved ones.</p></Link>
-          <Link href="/donate" className="tile"><div className="ic">💝</div><h3>Give Online</h3><p>Support the work of the parish.</p></Link>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="section-head center"><span className="eyebrow">Word & Worship</span><h2>Pray with us today</h2><div className="ornament" /></div>
+          <div className="word-grid">
+            <Suspense fallback={<HomeWordFallback />}><HomeWord /></Suspense>
+            <div className={`word-card live-card ${isLive ? 'is-live' : ''}`}>
+              <span className="eyebrow">{isLive ? 'Live now' : 'Livestream Mass'}</span>
+              {isLive ? (
+                <><h3><span className="live-badge"><i /> LIVE</span> {s.live_title}</h3><p className="muted">Holy Mass is being streamed right now.</p></>
+              ) : nextLive[0] ? (
+                <><h3>Next broadcast</h3><p className="next-broadcast"><b>{nextLive[0].title}</b><br />{fmtDate(nextLive[0].scheduled_at, { weekday: 'long', day: 'numeric', month: 'long' })} · {fmtTime(nextLive[0].scheduled_at)}</p></>
+              ) : <><h3>Watch Mass online</h3><p className="muted">{s.live_schedule_text}</p></>}
+              {!isLive && rec && (
+                <Link href={`/live?v=${lastRec[0].id}`} className="mini-rec">
+                  {rec.thumb ? <img src={rec.thumb} alt="" /> : <span className="placeholder-img" style={{ fontSize: 20 }}>▶</span>}
+                  <span><small>Latest recording</small><b>{lastRec[0].title}</b></span>
+                </Link>
+              )}
+              <div style={{ marginTop: 'auto' }}><Link href="/live" className="btn btn-primary btn-sm">{isLive ? 'Watch now' : 'Go to livestream'}</Link></div>
+            </div>
+            <div className="word-card">
+              <span className="eyebrow">Holy days & feasts</span>
+              {feasts.length ? feasts.map((f) => (
+                <div key={f.id} className="feast-mini">
+                  <div className="when"><b>{fmtDate(f.date, { day: 'numeric' })}</b><small>{fmtDate(f.date, { month: 'short' })}</small></div>
+                  <div><span className="tag" style={{ marginBottom: 4 }}>{f.kind}</span><b style={{ display: 'block', lineHeight: 1.3 }}>{f.title}</b>{f.mass_times && <small className="muted">{f.mass_times}</small>}</div>
+                </div>
+              )) : <p className="muted">Upcoming holy days will appear here.</p>}
+              <div style={{ marginTop: 'auto' }}><Link href="/mass-times#holy-days" className="btn btn-light btn-sm">Liturgical calendar</Link></div>
+            </div>
+          </div>
         </div>
       </section>
 

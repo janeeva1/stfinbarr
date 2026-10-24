@@ -19,7 +19,7 @@ export default function HeroSlider({ slides, s }) {
         </div>
       ))}
       <div className="container hero-content">
-        <span className="eyebrow">{s.parish_name}</span>
+        <span className="eyebrow">{s.parish_name}{s.motto ? ` · ${s.motto}` : ''}</span>
         <h1 key={cur.id}>{cur.title}</h1>
         <p className="lead">{cur.subtitle}</p>
         <div className="hero-actions">

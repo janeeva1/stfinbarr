@@ -1,10 +1,26 @@
-# St. Finbarr's Catholic Church — Website, CMS & Church Management
+# St. Finbarr's Catholic Church, Rayfield, Jos — Website, CMS & Church Management
 
-A single Next.js project with a PostgreSQL database. It contains:
+One Next.js project with a PostgreSQL database (Neon in production).
 
-- **Public website** — home page slider, Mass & confession times, events, news & announcements, photo gallery (albums + lightbox), societies & ministries, clergy, contact & prayer requests, Mass intention booking, and a giving page.
-- **CMS** (`/admin`) — edit everything on the website: slides, events, news, gallery albums & photos (with bulk upload), Mass times, clergy, ministries, page text, parish details, and **the colour theme** (presets or any custom colours + heading font, with live preview).
-- **Church management** — parishioner register (families, zones, societies, sacraments received), sacramental register, offerings & donations (with totals), Mass intentions, inbox for messages & prayer requests, admin users. Dashboard with key numbers.
+**Public website** — homepage (banner slider, motto, Mass times, today's Gospel, livestream, holy days), About (history, mission, patron saint, clergy), Mass & confession times, holy days/feasts/novenas, **daily and Sunday Mass readings**, **livestream Mass** with recorded Masses & homilies, sacraments with online registration, events, news, photo gallery, ministries, contact & prayer requests, Mass intentions, giving, privacy notice. Burgundy, gold & cream design; works on phones.
+
+**Admin (`/admin`)** — edit everything without a developer, change colours/fonts/logo/banners, go live with one button, approve posts, parish records (parishioners, sacramental register, donations, Mass intentions, inbox), visit statistics, CSV export, full backup & restore.
+
+## Going live on Sunday
+1. Start the stream on YouTube or Facebook and copy the video link.
+2. Admin → Settings → **📺 Livestream** → paste the link → press **Go LIVE**. A red LIVE bar appears on every page and the video plays on the Livestream page.
+3. After Mass press **Switch OFF live**. Add the recording under **Livestream & Recordings** (kind: Recorded Mass or Homily) so people can watch it again.
+
+## Mass readings
+Readings appear automatically every day (from the Evangelizo.org reader feed, cached in the database). To use different readings for a date (e.g. a local feast), add them under **Mass Readings (manual)** — they replace the automatic ones for that date.
+
+## Staff roles
+| Role | Can do |
+|---|---|
+| admin | Everything, including staff accounts and backups |
+| priest | Everything except staff accounts & backups; approves announcements and events |
+| editor | Website and liturgy content; announcements/events wait for approval |
+| secretary | Parish records, Mass intentions and inbox |
 
 ## Run it
 

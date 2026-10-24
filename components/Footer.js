@@ -7,6 +7,7 @@ export default function Footer({ s, mass = [] }) {
         <div className="footer-grid">
           <div>
             <div className="brand">{s.logo ? <img src={s.logo} className="brand-logo" alt="" /> : <span className="brand-mark">✝</span>}<span className="brand-text"><strong>{s.parish_name}</strong><small>{s.diocese}</small></span></div>
+            {s.motto && <p style={{ color: 'var(--accent)', fontFamily: 'var(--heading)', fontSize: '1.2rem', margin: '0 0 8px' }}>{s.motto}</p>}
             <p style={{ fontSize: 14.5 }}>{s.tagline}. {s.mission_text}</p>
             <div style={{ display: 'flex', gap: 14, fontSize: 14 }}>
               {s.facebook && <a href={s.facebook}>Facebook</a>}{s.instagram && <a href={s.instagram}>Instagram</a>}{s.youtube && <a href={s.youtube}>YouTube</a>}
@@ -15,9 +16,10 @@ export default function Footer({ s, mass = [] }) {
           <div>
             <h4>Explore</h4>
             <ul>
-              <li><Link href="/about">About the Parish</Link></li><li><Link href="/events">Events</Link></li>
-              <li><Link href="/news">News & Bulletins</Link></li><li><Link href="/gallery">Gallery</Link></li>
-              <li><Link href="/ministries">Societies</Link></li><li><Link href="/donate">Give Online</Link></li>
+              <li><Link href="/about">About the Parish</Link></li><li><Link href="/live">Livestream Mass</Link></li>
+              <li><Link href="/readings">Daily Readings</Link></li><li><Link href="/sacraments">Sacraments</Link></li>
+              <li><Link href="/events">Events</Link></li><li><Link href="/news">News & Bulletins</Link></li>
+              <li><Link href="/gallery">Gallery</Link></li><li><Link href="/donate">Give Online</Link></li>
             </ul>
           </div>
           <div>
@@ -34,7 +36,7 @@ export default function Footer({ s, mass = [] }) {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} {s.parish_name}. All rights reserved.</span>
-          <span>Ad Majorem Dei Gloriam ✠</span>
+          <span><Link href="/privacy">Privacy Notice</Link> · Ad Majorem Dei Gloriam ✠</span>
         </div>
       </div>
     </footer>

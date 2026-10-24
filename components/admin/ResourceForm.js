@@ -5,7 +5,7 @@ import ImageField from './ImageField';
 
 const toLocal = (v) => { if (!v) return ''; const d = new Date(v); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
-export default function ResourceForm({ name, res, row, options }) {
+export default function ResourceForm({ name, res, row, options, canApprove = true }) {
   const router = useRouter();
   const isNew = !row;
   const init = {};
@@ -40,10 +40,10 @@ export default function ResourceForm({ name, res, row, options }) {
   return (
     <form className="a-card" onSubmit={save}>
       <div className="a-form">
-        {Object.entries(res.fields).map(([k, f]) => {
+        {Object.entries(res.fields).filter(([, f]) => !f.hidden).map(([k, f]) => {
           const label = <>{f.label || k.replace(/_id$/, '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}{f.required && ' *'}{f.help && <span className="help"> — {f.help}</span>}</>;
           const full = ['textarea', 'image'].includes(f.type);
-          if (f.type === 'checkbox') return <label key={k} className="check"><input type="checkbox" checked={!!data[k]} onChange={(e) => set(k, e.target.checked)} />{label}</label>;
+          if (f.type === 'checkbox') return <label key={k} className="check"><input type="checkbox" checked={!!data[k]} onChange={(e) => set(k, e.target.checked)} />{f.approval && !canApprove ? 'Submit for approval (the Parish Priest or administrator will publish it)' : label}</label>;
           let input;
           if (f.type === 'textarea') input = <textarea className="input" rows={f.rows || 4} value={data[k]} onChange={(e) => set(k, e.target.value)} readOnly={f.readonly} />;
           else if (f.type === 'image') input = <ImageField name={k} value={data[k]} onChange={(v) => set(k, v)} />;
@@ -56,6 +56,7 @@ export default function ResourceForm({ name, res, row, options }) {
           return <label key={k} className={`f ${full ? 'full' : ''}`}>{label}{input}</label>;
         })}
       </div>
+      {row?.status && <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>Approval status: <b>{row.status}</b></p>}
       {err && <div className="alert err" style={{ marginTop: 16 }}>{err}</div>}
       <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 10 }}>
