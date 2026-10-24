@@ -99,8 +99,8 @@ const DEFAULT_SETTINGS = {
   parish_name: "St. Finbarr's Catholic Church",
   parish_short: "St. Finbarr's",
   tagline: 'A family of faith, worship and service',
-  diocese: 'Archdiocese of Lagos',
-  address: 'St. Finbarr’s Road, Akoka, Yaba, Lagos',
+  diocese: 'Catholic Archdiocese of Jos',
+  address: 'St. Finbarr’s Catholic Church, Rayfield, Jos, Plateau State',
   phone: '+234 800 000 0000',
   email: 'info@stfinbarrparish.org',
   office_hours: 'Mon – Fri: 9:00am – 4:00pm\nSat: 10:00am – 1:00pm',
@@ -114,7 +114,7 @@ const DEFAULT_SETTINGS = {
   mission_text: 'To proclaim the Gospel, celebrate the sacraments with reverence, and serve the poor and the needy with the love of Christ.',
   bank_details: 'Bank: Your Bank Name\nAccount Name: St. Finbarr’s Catholic Church\nAccount No: 0000000000',
   donate_text: 'Your generosity sustains the life and mission of our parish — from the liturgy and the upkeep of our church to our care for the poor. Thank you for giving.',
-  map_embed: 'https://www.google.com/maps?q=St+Finbarr%27s+Catholic+Church+Akoka+Lagos&output=embed',
+  map_embed: 'https://www.google.com/maps?q=St+Finbarr%27s+Catholic+Church+Rayfield+Jos&output=embed',
   facebook: '#', instagram: '#', youtube: '#',
   hero_image: img('service'),
   logo: '',
@@ -150,7 +150,7 @@ async function seed(c) {
     { day: 'Sunday', time: '6:30 AM', title: 'First Mass', language: 'English', sort_order: 1 },
     { day: 'Sunday', time: '8:30 AM', title: 'Second Mass', language: 'English', sort_order: 2 },
     { day: 'Sunday', time: '10:30 AM', title: 'Third Mass (Children)', language: 'English', sort_order: 3 },
-    { day: 'Sunday', time: '5:00 PM', title: 'Evening Mass', language: 'Yoruba', sort_order: 4 },
+    { day: 'Sunday', time: '5:00 PM', title: 'Evening Mass', language: 'Hausa', sort_order: 4 },
     { day: 'Monday – Friday', time: '6:30 AM', title: 'Morning Mass', language: 'English', sort_order: 5 },
     { day: 'Wednesday', time: '6:00 PM', title: 'Novena & Evening Mass', language: 'English', sort_order: 6 },
     { day: 'Saturday', time: '7:00 AM', title: 'Morning Mass', language: 'English', sort_order: 7 },
@@ -197,7 +197,7 @@ async function seed(c) {
   const mi = m.rows.map((r) => r.id);
   const people = [
     ['Chinedu', 'Okafor', 'Male', 'Married', 'Engineer', 1, 'Zone A'], ['Ngozi', 'Okafor', 'Female', 'Married', 'Teacher', 0, 'Zone A'],
-    ['Adebayo', 'Adeyemi', 'Male', 'Single', 'Student', 2, 'Zone B'], ['Funmilayo', 'Bello', 'Female', 'Married', 'Nurse', 0, 'Zone C'],
+    ['Gyang', 'Pam', 'Male', 'Single', 'Student', 2, 'Zone B'], ['Naomi', 'Dung', 'Female', 'Married', 'Nurse', 0, 'Zone C'],
     ['Emeka', 'Nwosu', 'Male', 'Married', 'Accountant', 5, 'Zone B'], ['Blessing', 'Eze', 'Female', 'Single', 'Banker', 3, 'Zone D'],
     ['Joseph', 'Okon', 'Male', 'Widowed', 'Retired', 4, 'Zone C'], ['Grace', 'Ibe', 'Female', 'Single', 'Student', 6, 'Zone A'],
   ];
@@ -210,7 +210,7 @@ async function seed(c) {
   await ins('sacraments', [
     { sacrament: 'Baptism', person_name: 'Chiamaka Okafor', parishioner_id: null, date: day(-40), minister: 'Rev. Fr. Parish Priest', parents: 'Chinedu & Ngozi Okafor', sponsors: 'Blessing Eze', register_no: 'BAP/2026/041' },
     { sacrament: 'Marriage', person_name: 'Emeka Nwosu & Ada Nwosu', parishioner_id: pIds[4], date: day(-120), minister: 'Rev. Fr. Assistant Priest', register_no: 'MAR/2026/012' },
-    { sacrament: 'Confirmation', person_name: 'Grace Ibe', parishioner_id: pIds[7], date: day(-200), minister: 'Most Rev. Archbishop', sponsors: 'Funmilayo Bello', register_no: 'CON/2026/088' },
+    { sacrament: 'Confirmation', person_name: 'Grace Ibe', parishioner_id: pIds[7], date: day(-200), minister: 'Most Rev. Archbishop', sponsors: 'Naomi Dung', register_no: 'CON/2026/088' },
   ]);
   const cats = ['Offertory', 'Tithe', 'Building Fund', 'Thanksgiving', 'Harvest', 'Charity'];
   for (let i = 0; i < 24; i++) {
@@ -243,6 +243,14 @@ export async function runSetup(databaseUrl, { reset = false, builtIn = false } =
   for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) {
     await c.query('INSERT INTO settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO NOTHING', [k, v]);
   }
+  // Correct the old (Lagos) sample defaults if the admin hasn't changed them
+  for (const [k, oldV] of [
+    ['diocese', 'Archdiocese of Lagos'],
+    ['address', 'St. Finbarr\u2019s Road, Akoka, Yaba, Lagos'],
+    ['map_embed', 'https://www.google.com/maps?q=St+Finbarr%27s+Catholic+Church+Akoka+Lagos&output=embed'],
+  ]) await c.query('UPDATE settings SET value=$1 WHERE key=$2 AND value=$3', [DEFAULT_SETTINGS[k], k, oldV]);
+  await c.query("UPDATE mass_times SET language='Hausa' WHERE language='Yoruba' AND title='Evening Mass'");
+
   const users = await c.query('SELECT count(*)::int AS n FROM users');
   if (users.rows[0].n === 0) {
     await c.query('INSERT INTO users (name, email, password_hash, role) VALUES ($1,$2,$3,$4)',
