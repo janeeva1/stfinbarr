@@ -4,8 +4,10 @@ import { getSettings } from '@/lib/settings';
 import { query } from '@/lib/db';
 
 export default async function SiteLayout({ children }) {
-  const s = await getSettings();
-  const mass = await query("SELECT * FROM mass_times WHERE category='Mass' OR category IS NULL ORDER BY sort_order, id");
+  const [s, mass] = await Promise.all([
+    getSettings(),
+    query("SELECT * FROM mass_times WHERE category='Mass' OR category IS NULL ORDER BY sort_order, id"),
+  ]);
   return (
     <>
       <Header s={s} />
