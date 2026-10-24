@@ -24,7 +24,7 @@ export default async function Edit({ params }) {
   return (
     <>
       <div className="topline">
-        <div><Link href={`/admin/${params.resource}`} className="muted" style={{ fontSize: 14 }}>← {res.label}</Link><h1>{isNew ? `New ${res.singular}` : `Edit ${res.singular}`}</h1></div>
+        <div><h1>{isNew ? `New ${res.singular}` : `Edit ${res.singular}`}</h1></div>
         {!isNew && params.resource === 'gallery_albums' && <Link href={`/admin/gallery_photos?album=${row.id}`} className="btn btn-primary btn-sm">📸 Upload photos to this album</Link>}
       </div>
       <ResourceForm name={params.resource} res={{ singular: res.singular, fields: res.fields }} row={plain} options={options} canApprove={canApprove(user.role)} />

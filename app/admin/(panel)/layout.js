@@ -3,6 +3,7 @@ import { getUser } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
 import { RESOURCES, canAccess, canManageSettings, canBackup, ROLE_LABELS } from '@/lib/resources';
 import Sidebar from '@/components/admin/Sidebar';
+import AdminNav from '@/components/admin/AdminNav';
 
 export const metadata = { title: 'Admin' };
 
@@ -15,7 +16,10 @@ export default async function PanelLayout({ children }) {
   return (
     <div className="admin">
       <Sidebar groups={groups} s={s} user={{ ...user, roleLabel: ROLE_LABELS[user.role] || user.role }} perms={{ settings: canManageSettings(user.role), backup: canBackup(user.role) }} />
-      <div className="main">{children}</div>
+      <div className="main">
+        <AdminNav labels={{ ...Object.fromEntries(Object.entries(RESOURCES).map(([k, r]) => [k, r.label])), settings: 'Settings & Theme', backup: 'Backup & Export', account: 'My account' }} />
+        {children}
+      </div>
     </div>
   );
 }

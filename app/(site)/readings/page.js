@@ -17,7 +17,7 @@ export default async function Readings({ searchParams }) {
 
   return (
     <>
-      <PageHero title={isSunday ? 'Sunday Mass Readings' : 'Daily Mass Readings'} text="Prepare for Mass and pray with the Word of God each day." banner="banner_mass" crumb="Mass Readings" />
+      <PageHero title={isSunday ? 'Sunday Mass Readings' : 'Daily Mass Readings'} text="Prepare for Mass and pray with the Word of God each day." banner="banner_mass" crumbTitle="Mass Readings" />
       <section className="section">
         <div className="narrow">
           <div className="tabs" style={{ justifyContent: 'center' }}>

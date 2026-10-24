@@ -4,13 +4,19 @@ import { one } from '@/lib/db';
 import { fmtDate, fmtTime } from '@/lib/format';
 import PageHero from '@/components/PageHero';
 import Img from '@/components/Img';
+import ItemPager from '@/components/ItemPager';
 
 export default async function Event({ params }) {
   const e = await one('SELECT * FROM events WHERE id=$1 AND published', [Number(params.id) || 0]);
   if (!e) notFound();
+  // neighbouring events by date
+  const [prev, next] = await Promise.all([
+    one('SELECT id, title FROM events WHERE published AND (start_date, id) < ($1, $2) ORDER BY start_date DESC, id DESC LIMIT 1', [e.start_date, e.id]),
+    one('SELECT id, title FROM events WHERE published AND (start_date, id) > ($1, $2) ORDER BY start_date, id LIMIT 1', [e.start_date, e.id]),
+  ]);
   return (
     <>
-      <PageHero title={e.title} crumb={<><Link href="/events">Events</Link> / {e.category || 'Event'}</>} image={e.image || undefined} banner="banner_events" />
+      <PageHero title={e.title} image={e.image || undefined} banner="banner_events" />
       <section className="section">
         <div className="narrow">
           {e.image && <Img src={e.image} className="article-img" alt="" />}
@@ -20,7 +26,8 @@ export default async function Event({ params }) {
             {e.location && <div><b className="muted" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.1em' }}>Venue</b><div>{e.location}</div></div>}
           </div>
           <div className="prose">{e.description}</div>
-          <Link href="/events" className="btn btn-outline" style={{ marginTop: 30 }}>← Back to events</Link>
+          <ItemPager prev={prev && { href: `/events/${prev.id}`, title: prev.title }} next={next && { href: `/events/${next.id}`, title: next.title }}
+            all={{ href: '/events', label: 'All events' }} prevLabel="Earlier event" nextLabel="Later event" />
         </div>
       </section>
     </>
