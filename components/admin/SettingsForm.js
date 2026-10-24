@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ImageField from './ImageField';
 
@@ -43,6 +43,9 @@ export default function SettingsForm({ initial, presets, fonts, initialTab }) {
   const [tab, setTab] = useState(initialTab || 'theme');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Remove unsaved preview colours when leaving this page (saved colours come from the server)
+  useEffect(() => () => { const r = document.documentElement.style; ['--primary', '--accent', '--dark', '--bg', '--heading'].forEach((v) => r.removeProperty(v)); }, []);
 
   const applyLive = (next) => {
     const r = document.documentElement.style;

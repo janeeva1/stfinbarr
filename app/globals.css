@@ -323,7 +323,7 @@ table.t img { width: 56px; height: 40px; object-fit: cover; border-radius: 6px; 
 .live-badge i, .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: inline-block; animation: blink 1.2s infinite; }
 .live-dot { background: #d61f2c; box-shadow: 0 0 0 3px rgba(214,31,44,.2); }
 @keyframes blink { 50% { opacity: .25; } }
-.live-bar { display: flex; align-items: center; justify-content: center; gap: 14px; background: #1b0a10; color: #fff; padding: 9px 16px; text-decoration: none; font-size: 14.5px; flex-wrap: wrap; text-align: center; }
+.live-bar { display: flex; align-items: center; justify-content: center; gap: 14px; background: color-mix(in srgb, var(--dark) 82%, black); color: #fff; padding: 9px 16px; text-decoration: none; font-size: 14.5px; flex-wrap: wrap; text-align: center; }
 .live-bar b { color: var(--accent); }
 .live-player { background: var(--card); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); border-top: 4px solid #d61f2c; }
 .live-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
