@@ -30,7 +30,6 @@ export default function Header({ s }) {
           </div>
           <div>
             <span className="hide-sm">✉️ <a href={`mailto:${s.email}`}>{s.email}</a></span>
-            <Link href="/admin" style={{ color: 'var(--accent)' }}>Admin login →</Link>
           </div>
         </div>
       </div>

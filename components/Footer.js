@@ -36,7 +36,7 @@ export default function Footer({ s, mass = [] }) {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} {s.parish_name}. All rights reserved.</span>
-          <span><Link href="/privacy">Privacy Notice</Link> · Ad Majorem Dei Gloriam ✠</span>
+          <span><Link href="/privacy">Privacy Notice</Link> · <Link href="/admin/login">Staff login</Link> · Ad Majorem Dei Gloriam ✠</span>
         </div>
       </div>
     </footer>
