@@ -40,7 +40,7 @@ export default async function List({ params, searchParams }) {
             <table className="table">
               <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th>Last message</th><th></th></tr></thead>
               <tbody>
-                {rows.length ? rows.map((r) => (
+                {(rows || []).length ? rows.map((r) => (
                   <tr key={r.id}>
                     <td>#{r.id}</td>
                     <td>{r.name || 'Visitor'}</td>

@@ -26,10 +26,10 @@ export default async function ChatThread({ params }) {
       </div>
       <div className="a-card" style={{ maxWidth: 700 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 500, overflowY: 'auto', padding: 10, background: '#f7f7f7', borderRadius: 8 }}>
-          {msgs.map((m) => (
+          {(msgs || []).map((m) => (
             <div key={m.id} style={{ alignSelf: m.sender === 'admin' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
               <div style={{ padding: '8px 12px', borderRadius: 12, background: m.sender === 'admin' ? 'var(--primary)' : '#e9e9e9', color: m.sender === 'admin' ? '#fff' : '#000', whiteSpace: 'pre-wrap', fontSize: 14 }}>{m.message}</div>
-              <div style={{ fontSize: 11, color: '#888', textAlign: m.sender === 'admin' ? 'right' : 'left', marginTop: 2 }}>{new Date(m.created_at).toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: '#888', textAlign: m.sender === 'admin' ? 'right' : 'left', marginTop: 2 }}>{m.created_at ? new Date(m.created_at).toLocaleString() : ''}</div>
             </div>
           ))}
         </div>
