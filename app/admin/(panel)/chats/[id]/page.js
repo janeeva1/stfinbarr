@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { getUser } from '@/lib/auth';
 import { canAccess } from '@/lib/resources';
 import { query } from '@/lib/db';
-import { format } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
