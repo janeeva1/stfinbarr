@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getUser } from '@/lib/auth';
 import { canAccess } from '@/lib/resources';
 import { query } from '@/lib/db';
+import ChatReply from '@/components/admin/ChatReply';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,10 +34,7 @@ export default async function ChatThread({ params }) {
             </div>
           ))}
         </div>
-        <form action={`/api/admin/chats/${id}`} method="post" style={{ display: 'flex', gap: 10, marginTop: 12 }} onSubmit={async (e) => { e.preventDefault(); const f = e.target; const input = f.message; const val = input.value.trim(); if (!val) return; await fetch(f.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: val }) }); input.value = ''; window.location.reload(); }}>
-          <input name="message" className="input" placeholder="Type your reply..." autoComplete="off" />
-          <button className="btn btn-primary">Send Reply</button>
-        </form>
+        <ChatReply chatId={id} />
       </div>
     </>
   );
