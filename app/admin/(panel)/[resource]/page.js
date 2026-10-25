@@ -1,72 +1,96 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { RESOURCES, labelFor, canAccess } from '@/lib/resources';
+import { RESOURCES, canAccess } from '@/lib/resources';
 import { getUser } from '@/lib/auth';
-import { listRows, relationOptions } from '@/lib/crud';
-import { getSettings } from '@/lib/settings';
-import { fmtDate, fmtMoney, fmtTime } from '@/lib/format';
 import { query } from '@/lib/db';
-import BulkUpload from '@/components/admin/BulkUpload';
+import { fmtDate, fmtDateTime } from '@/lib/format';
+
+export const dynamic = 'force-dynamic';
 
 export default async function List({ params, searchParams }) {
   const res = RESOURCES[params.resource];
   if (!res) notFound();
   const user = await getUser();
-  if (!canAccess(user.role, params.resource)) return <div className="a-card"><h2>No access</h2><p className="muted">Your role ({user.role}) cannot open this section. Ask the parish administrator if you need access.</p></div>;
-  const q = searchParams?.q || '';
-  const page = Number(searchParams?.page || 1);
-  const { rows, total, pages } = await listRows(params.resource, { q, page });
-  const opts = await relationOptions(res);
-  const s = await getSettings();
-  const totals = params.resource === 'donations' ? (await query('SELECT COALESCE(sum(amount),0) t FROM donations'))[0].t : null;
+  if (!canAccess(user.role, params.resource)) return <div className="a-card"><h2>No access</h2><p className="muted">Your role ({user.role}) cannot access this section.</p></div>;
+  const sp = searchParams || {};
+  const page = Number(sp.page || 1);
+  const q = sp.q || '';
+  const limit = 30;
+  const off = (page - 1) * limit;
+  let where = '';
+  const vals = [];
+  if (q && res.search) {
+    const conds = res.search.map((f, i) => { vals.push(`%${q}%`); return `${f}::text ILIKE $${vals.length}`; });
+    if (conds.length) { where = 'WHERE ' + conds.join(' OR '); }
+  }
+  const from = `FROM ${params.resource} ${where}`;
+  const total = (await query(`SELECT count(*)::int n ${from}`, vals))[0].n;
+  vals.push(limit, off);
+  const order = res.order || 'id DESC';
+  const rows = await query(`SELECT * ${from} ORDER BY ${order} LIMIT $${vals.length - 1} OFFSET $${vals.length}`, vals);
 
-  const cell = (k, v) => {
-    const f = res.fields[k] || {};
-    if (v === null || v === undefined || v === '') return <span className="muted">—</span>;
-    switch (f.type) {
-      case 'image': return <img src={v} alt="" />;
-      case 'checkbox': return <span className={`pill ${v ? 'yes' : 'no'}`}>{v ? 'Yes' : 'No'}</span>;
-      case 'date': return fmtDate(v, { day: 'numeric', month: 'short', year: 'numeric' });
-      case 'datetime': return `${fmtDate(v, { day: 'numeric', month: 'short', year: 'numeric' })} ${fmtTime(v)}`;
-      case 'money': return fmtMoney(v, s.currency);
-      case 'relation': return opts[k]?.find((o) => o.value === v)?.label || v;
-      case 'select': return <span className="pill">{v}</span>;
-      case 'text': if (k === 'status') return <span className={`pill ${v === 'Approved' ? 'yes' : v === 'Awaiting approval' ? 'warn' : ''}`}>{v}</span>; return String(v).slice(0, 70);
-      default: return String(v).slice(0, 70);
-    }
-  };
-  const base = `/admin/${params.resource}`;
+  if (params.resource === 'chats') {
+    return (
+      <>
+        <div className="topline">
+          <div><h1>💬 {res.label}</h1><p className="muted" style={{ margin: 0 }}>View and reply to customer chats from the website.</p></div>
+        </div>
+        <div className="a-card">
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th>Last message</th><th></th></tr></thead>
+              <tbody>
+                {rows.length ? rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>#{r.id}</td>
+                    <td>{r.name || 'Visitor'}</td>
+                    <td>{r.phone || '-'}</td>
+                    <td>{r.email || '-'}</td>
+                    <td>{r.status || 'Open'}</td>
+                    <td>{r.last_message_at ? fmtDateTime(r.last_message_at) : '-'}</td>
+                    <td style={{ textAlign: 'right' }}><Link href={`/admin/chats/${r.id}`} className="btn btn-light btn-sm">Open chat</Link></td>
+                  </tr>
+                )) : <tr><td colSpan={7} className="muted" style={{ textAlign: 'center' }}>No chats yet</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="topline">
-        <div><h1>{res.icon} {res.label}</h1><p className="muted" style={{ margin: 0 }}>{total} record{total === 1 ? '' : 's'}{totals !== null && ` · Total ${fmtMoney(totals, s.currency)}`}</p></div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {res.search && <form><input name="q" defaultValue={q} className="input" placeholder="Search…" style={{ padding: '9px 12px', width: 220 }} /></form>}
-          <a href={`/api/admin/export/${params.resource}`} className="btn btn-light btn-sm">⬇ Export CSV</a>
-          {!res.noCreate && <Link href={`${base}/new`} className="btn btn-primary btn-sm">+ Add {res.singular}</Link>}
-        </div>
+        <div><h1>{res.icon} {res.label}</h1></div>
+        {!res.noCreate && <Link href={`/admin/${params.resource}/new`} className="btn btn-primary">+ Add {res.singular}</Link>}
       </div>
-      {res.note && <div className="alert info" style={{ marginBottom: 16 }}>ℹ️ {res.note}</div>}
-      {res.bulkUpload && <BulkUpload albums={opts.album_id || []} initial={searchParams?.album} />}
-      <div className="t-wrap">
-        <table className="t">
-          <thead><tr>{res.list.map((k) => <th key={k}>{labelFor(k, res.fields[k])}</th>)}<th /></tr></thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                {res.list.map((k, i) => <td key={k}>{i === 0 || (i === 1 && res.fields[res.list[0]]?.type === 'image') ? <Link href={`${base}/${r.id}`} style={{ fontWeight: 600 }}>{cell(k, r[k])}</Link> : cell(k, r[k])}</td>)}
-                <td style={{ textAlign: 'right' }}><Link href={`${base}/${r.id}`} className="btn btn-light btn-sm">Edit</Link></td>
-              </tr>
-            ))}
-            {!rows.length && <tr><td colSpan={res.list.length + 1} className="muted" style={{ padding: 30, textAlign: 'center' }}>Nothing here yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-      {pages > 1 && (
-        <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => <Link key={p} href={`${base}?page=${p}${q ? `&q=${encodeURIComponent(q)}` : ''}`} className={`btn btn-sm ${p === page ? 'btn-primary' : 'btn-light'}`}>{p}</Link>)}
+      <div className="a-card">
+        {res.search && (
+          <form method="get" className="searchbar">
+            <input name="q" defaultValue={q} placeholder={`Search ${res.label.toLowerCase()}...`} className="input" />
+            <button className="btn btn-light">Search</button>
+          </form>
+        )}
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr>{(res.list || ['id']).map((c) => <th key={c}>{c.replace(/_/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase())}</th>)}<th></th></tr></thead>
+            <tbody>
+              {rows.length ? rows.map((r) => (
+                <tr key={r.id}>
+                  {(res.list || ['id']).map((c) => <td key={c}>{c === 'image' || c === 'cover_image' || c === 'photo' || c === 'logo' ? (r[c] ? <img src={r[c]} alt="" style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 6 }} /> : '-') : c.includes('date') || c === 'published_at' || c === 'created_at' || c === 'last_message_at' ? fmtDate(r[c]) || fmtDateTime(r[c]) || '-' : String(r[c] ?? '-')}</td>)}
+                  <td style={{ textAlign: 'right' }}><Link href={`/admin/${params.resource}/${r.id}`} className="btn btn-light btn-sm">Edit</Link></td>
+                </tr>
+              )) : <tr><td colSpan={(res.list || ['id']).length + 1} className="muted" style={{ textAlign: 'center' }}>Nothing found</td></tr>}
+            </tbody>
+          </table>
         </div>
-      )}
+        {total > limit && <div style={{ display: 'flex', gap: 10, justifyContent: 'center', paddingTop: 14 }}>
+          {page > 1 && <Link href={`?page=${page - 1}${q ? '&q=' + encodeURIComponent(q) : ''}`} className="btn btn-light btn-sm">Previous</Link>}
+          <span className="muted">Page {page} of {Math.ceil(total / limit)}</span>
+          {page < Math.ceil(total / limit) && <Link href={`?page=${page + 1}${q ? '&q=' + encodeURIComponent(q) : ''}`} className="btn btn-light btn-sm">Next</Link>}
+        </div>}
+      </div>
     </>
   );
 }

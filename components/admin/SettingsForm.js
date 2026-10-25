@@ -5,7 +5,7 @@ import ImageField from './ImageField';
 
 const GENERAL = [
   ['parish_name', 'Parish name'], ['parish_short', 'Short name (header)'], ['motto', 'Parish motto'], ['tagline', 'Tagline'], ['diocese', 'Diocese'],
-  ['address', 'Address'], ['phone', 'Phone'], ['email', 'Email'], ['office_hours', 'Office hours', 'textarea'],
+  ['address', 'Address'], ['phone', 'Phone'], ['whatsapp_number', 'WhatsApp number (for WhatsApp widget)'], ['email', 'Email'], ['office_hours', 'Office hours', 'textarea'],
   ['currency', 'Currency symbol'], ['map_embed', 'Google Maps embed URL'], ['facebook', 'Facebook URL'], ['instagram', 'Instagram URL'], ['youtube', 'YouTube URL'],
 ];
 const LIVE = [

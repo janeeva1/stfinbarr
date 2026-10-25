@@ -106,6 +106,24 @@ CREATE TABLE IF NOT EXISTS readings (
   gospel_ref TEXT, gospel_text TEXT, notes TEXT, created_at TIMESTAMPTZ DEFAULT now());
 CREATE TABLE IF NOT EXISTS readings_cache (date TEXT PRIMARY KEY, data JSONB NOT NULL, fetched_at TIMESTAMPTZ DEFAULT now());
 CREATE TABLE IF NOT EXISTS page_views (day DATE NOT NULL, path TEXT NOT NULL, views INT DEFAULT 0, PRIMARY KEY (day, path));
+CREATE TABLE IF NOT EXISTS chats (
+  id SERIAL PRIMARY KEY,
+  session_id TEXT UNIQUE NOT NULL,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  status TEXT DEFAULT 'Open',
+  last_message_at TIMESTAMPTZ DEFAULT now(),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  chat_id INT REFERENCES chats(id) ON DELETE CASCADE,
+  sender TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 ALTER TABLE news ADD COLUMN IF NOT EXISTS status TEXT;
 ALTER TABLE events ADD COLUMN IF NOT EXISTS status TEXT;
 `;
@@ -119,6 +137,7 @@ const DEFAULT_SETTINGS = {
   diocese: 'Catholic Archdiocese of Jos',
   address: 'St. Finbarr’s Catholic Church, Rayfield, Jos, Plateau State',
   phone: '+234 800 000 0000',
+  whatsapp_number: '+234 800 000 0000',
   email: 'info@stfinbarrparish.org',
   office_hours: 'Mon – Fri: 9:00am – 4:00pm\nSat: 10:00am – 1:00pm',
   welcome_title: 'Welcome home to St. Finbarr’s',

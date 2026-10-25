@@ -13,7 +13,7 @@ export async function PUT(req) {
     if (k in body && !isHex(body[k])) return NextResponse.json({ error: `"${body[k]}" is not a valid colour code — use the colour picker or a code like #6d1a36` }, { status: 400 });
   }
   for (const [k, v] of Object.entries(body)) {
-    if (!/^[a-z_]+$/.test(k) || k.startsWith('_')) continue;
+    if (!/^[a-z_0-9]+$/.test(k) || k.startsWith('_')) continue;
     await query('INSERT INTO settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value', [k, v ?? '']);
   }
   return NextResponse.json({ ok: true });
