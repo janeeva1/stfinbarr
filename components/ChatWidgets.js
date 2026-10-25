@@ -89,9 +89,10 @@ export default function ChatWidgets({ s }) {
       )}
       <style jsx global>{`
         .chat-widget{position:fixed;bottom:20px;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1000;border:none;cursor:pointer;text-decoration:none}
-        .chat-wa{left:20px;background:#25D366}
-        .chat-care{right:20px;background:var(--primary,#6d1a36)}
-        .chat-panel{position:fixed;bottom:90px;right:20px;width:320px;max-width:calc(100vw - 40px);height:420px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:1001;display:flex;flex-direction:column;overflow:hidden}
+        .chat-wa{left:16px;background:#25D366}
+        .chat-care{right:16px;background:var(--primary,#6d1a36)}
+        .chat-panel{position:fixed;bottom:90px;right:16px;width:320px;max-width:calc(100vw - 32px);height:420px;max-height:calc(100vh - 140px);background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:1001;display:flex;flex-direction:column;overflow:hidden}
+        @media (max-width: 420px){.chat-widget{width:50px;height:50px;bottom:14px}.chat-wa{left:10px}.chat-care{right:10px}.chat-panel{right:10px;bottom:76px;width:calc(100vw - 20px);height:60vh}}
         .chat-panel-header{background:var(--primary,#6d1a36);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
         .chat-panel-header button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer}
         .chat-panel-body{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}

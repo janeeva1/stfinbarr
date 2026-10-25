@@ -16,7 +16,7 @@ export default async function Donate() {
             {ways.map(([i, t, d]) => <div key={t} className="tile"><div className="ic">{i}</div><h3>{t}</h3><p>{d}</p></div>)}
           </div>
           <div className="cta-band">
-            <div><span className="eyebrow">Bank Transfer</span><h2>Parish account details</h2><p style={{ whiteSpace: 'pre-line', fontSize: 18 }}>{s.bank_details}</p></div>
+            <div style={{ minWidth: 0 }}><span className="eyebrow">Bank Transfer</span><h2>Parish account details</h2><p style={{ whiteSpace: 'pre-line', fontSize: 18, wordBreak: 'break-word' }}>{s.bank_details}</p></div>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <p>After giving, you may send us a note so we can acknowledge your gift and pray for your intentions.</p>
               <Link href="/contact" className="btn btn-accent">Notify the Parish Office</Link>
